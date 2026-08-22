@@ -21,6 +21,7 @@ public class UsuarioController {
     private final ActualizarUsuarioService actualizarUsuarioService;
     private final EliminarUsuarioService eliminarUsuarioService;
 
+    // ===== REGISTRAR =====
     @PostMapping("/registro")
     public ResponseEntity<String> registrar(@RequestBody RegistroUsuarioRequest request) {
         registrarUsuarioService.registrar(
@@ -55,6 +56,12 @@ public class UsuarioController {
     @GetMapping("/username/{username}")
     public ResponseEntity<UsuarioResponse> obtenerPorUsername(@PathVariable String username) {
         return ResponseEntity.ok(obtenerUsuarioService.obtenerPorUsername(username));
+    }
+
+    // ===== OBTENER POR EMAIL (NUEVO) =====
+    @GetMapping("/email/{email}")
+    public ResponseEntity<UsuarioResponse> obtenerPorEmail(@PathVariable String email) {
+        return ResponseEntity.ok(obtenerUsuarioService.obtenerPorEmail(email));
     }
 
     // ===== ACTUALIZAR =====

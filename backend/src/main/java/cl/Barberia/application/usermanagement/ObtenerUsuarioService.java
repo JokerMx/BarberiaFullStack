@@ -12,6 +12,7 @@ public class ObtenerUsuarioService {
 
     private final UsuarioRepository usuarioRepository;
 
+    // ===== OBTENER POR ID =====
     public UsuarioResponse obtenerPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
@@ -22,6 +23,7 @@ public class ObtenerUsuarioService {
         return UsuarioResponse.fromDomain(usuario, intentos.orElse(0), bloqueado.orElse(null));
     }
 
+    // ===== OBTENER POR USERNAME =====
     public UsuarioResponse obtenerPorUsername(String username) {
         Usuario usuario = usuarioRepository.findByUsername(username)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
@@ -32,13 +34,14 @@ public class ObtenerUsuarioService {
         return UsuarioResponse.fromDomain(usuario, intentos.orElse(0), bloqueado.orElse(null));
     }
 
-    public Usuario ejecutarPorId(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'ejecutarPorId'");
-    }
+    // ===== OBTENER POR EMAIL (NUEVO) =====
+    public UsuarioResponse obtenerPorEmail(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado con email: " + email));
 
-    public Usuario ejecutarPorUsername(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'ejecutarPorUsername'");
+        var intentos = usuarioRepository.findIntentosFallidosByUsername(usuario.getUsername());
+        var bloqueado = usuarioRepository.findBloqueadoHastaByUsername(usuario.getUsername());
+
+        return UsuarioResponse.fromDomain(usuario, intentos.orElse(0), bloqueado.orElse(null));
     }
 }
