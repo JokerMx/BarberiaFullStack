@@ -1,0 +1,133 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeonPulse - Salón de Belleza</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <!-- Header / Navbar -->
+  <header>
+    <div class="container">
+      <nav style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <a href="#" class="logo">
+          <span class="sparkle">✦</span> Neon<span>Pulse</span>
+        </a>
+        <ul>
+          <li><a href="#servicios-section">Servicios</a></li>
+          <li><a href="#reservas-section">Reservas</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <div class="container">
+    <section class="hero">
+      <h1><span class="highlight">Bienvenida a</span> NeonPulse</h1>
+      <p>Donde la belleza se transforma en arte. Descubre nuestros servicios exclusivos.</p>
+      <a href="#servicios-section" class="btn-cta">Ver Servicios</a>
+    </section>
+
+    <!-- Servicios -->
+    <section id="servicios-section">
+      <h2>Nuestros Servicios</h2>
+      <div id="servicios-container"></div>
+    </section>
+
+    <!-- Reservas -->
+    <section id="reservas-section">
+      <h2>Reservas Recientes</h2>
+      <div id="reservas-container"></div>
+    </section>
+  </div>
+
+  <!-- Modal de Reserva -->
+  <div id="modal-reserva" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-modal">&times;</button>
+      <h2>📅 Nueva Reserva</h2>
+      <form id="form-reserva" novalidate>
+        <input type="hidden" name="servicio_id">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre_cliente">Nombre *</label>
+            <input type="text" id="nombre_cliente" name="nombre_cliente" required placeholder="María Pérez">
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Correo Electrónico *</label>
+            <input type="email" id="email" name="email" required placeholder="nombre@ejemplo.com">
+            <span class="field-error"></span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="telefono">Teléfono *</label>
+          <input type="tel" id="telefono" name="telefono" required placeholder="+569 12345678">
+          <span class="field-error"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="profesional_id">Profesional *</label>
+          <select id="profesional_id" name="profesional_id" required>
+            <option value="">Selecciona un profesional</option>
+            <option value="1">María González - Estilista</option>
+            <option value="2">Carlos Rodríguez - Barbero</option>
+            <option value="3">Ana Martínez - Colorista</option>
+          </select>
+          <span class="field-error"></span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fecha">Fecha *</label>
+            <input type="date" id="fecha" name="fecha" required>
+            <span class="field-error"></span>
+          </div>
+
+          <div class="form-group">
+            <label for="hora">Hora *</label>
+            <select id="hora" name="hora" required>
+              <option value="">Selecciona una hora</option>
+              <option value="09:00">09:00</option>
+              <option value="09:30">09:30</option>
+              <option value="10:00">10:00</option>
+              <option value="10:30">10:30</option>
+              <option value="11:00">11:00</option>
+              <option value="11:30">11:30</option>
+              <option value="12:00">12:00</option>
+              <option value="12:30">12:30</option>
+              <option value="13:00">13:00</option>
+              <option value="13:30">13:30</option>
+              <option value="14:00">14:00</option>
+              <option value="14:30">14:30</option>
+              <option value="15:00">15:00</option>
+              <option value="15:30">15:30</option>
+              <option value="16:00">16:00</option>
+              <option value="16:30">16:30</option>
+              <option value="17:00">17:00</option>
+              <option value="17:30">17:30</option>
+              <option value="18:00">18:00</option>
+              <option value="18:30">18:30</option>
+              <option value="19:00">19:00</option>
+              <option value="19:30">19:30</option>
+            </select>
+            <span class="field-error"></span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Reservar Cita</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

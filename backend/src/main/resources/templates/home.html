@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="${titulo}">Barbería API</title>
+
+    <!-- ===== CSS DESACOPLADO ===== -->
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+    <!-- En entorno estático: <link rel="stylesheet" href="/css/home.css" /> -->
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ===== HEADER ===== -->
+    <div class="header">
+        <div class="header-left">
+            <h1 th:text="${titulo}">🪒 Barbería API</h1>
+            <span class="version" th:text="'Versión ' + ${version}">Versión 1.0.0</span>
+        </div>
+        <div>
+                <span class="status-badge"
+                      th:classappend="${status == 'online'} ? '' : 'offline'"
+                      th:text="${status}">
+                    online
+                </span>
+        </div>
+    </div>
+
+    <!-- ===== DESCRIPCIÓN ===== -->
+    <div class="description" th:text="${descripcion}">
+        Sistema de gestión para barbería
+    </div>
+
+    <!-- ===== ENDPOINTS ===== -->
+    <div class="categoria-endpoints" th:each="entry : ${endpoints}">
+        <h2 th:text="${entry.key}">🔐 Autenticación</h2>
+        <div class="endpoint-grid">
+            <div class="endpoint-item" th:each="endpoint : ${entry.value}">
+                <!-- Método HTTP -->
+                <span class="method"
+                      th:classappend="${#strings.substringBefore(endpoint.key, ' ')}"
+                      th:text="${#strings.substringBefore(endpoint.key, ' ')}">
+                        POST
+                    </span>
+                <!-- Ruta -->
+                <span class="path"
+                      th:text="${#strings.substringAfter(endpoint.key, ' ')}">
+                        /api/auth/login
+                    </span>
+                <!-- Descripción -->
+                <span class="desc" th:text="${endpoint.value}">
+                        Iniciar sesión
+                    </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TECNOLOGÍAS ===== -->
+    <div class="tech-section">
+        <h2>⚙️ Tecnologías</h2>
+        <div class="tech-grid">
+            <div class="tech-item" th:each="tech : ${tecnologias}">
+                <strong th:text="${tech.key}">Framework</strong>
+                <span th:text="${tech.value}">Spring Boot 3.2.8</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <div class="footer">
+        Spring Boot &middot; Java 21 &middot; PostgreSQL &middot; DDD + Hexagonal
+        <br />
+        <span style="font-size: 0.8rem; color: #475569;">
+                <a href="https://docs.spring.io/spring-boot/docs/current/reference/html/"
+                   target="_blank">
+                    Documentación oficial
+                </a>
+            </span>
+    </div>
+
+</div>
+
+</body>
+</html>

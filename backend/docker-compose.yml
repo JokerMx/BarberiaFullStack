@@ -1,0 +1,48 @@
+
+services:
+  # ===== POSTGRESQL =====
+  postgres:
+    image: postgres:16-alpine
+    container_name: barberia-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: barberia_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - barberia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===== API SPRING BOOT =====
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: barberia-api
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/barberia_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - barberia-network
+    restart: unless-stopped
+
+networks:
+  barberia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
