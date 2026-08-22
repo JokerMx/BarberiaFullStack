@@ -3,6 +3,8 @@
 import { LoginView } from './views/login/loginView';
 import { RegisterView } from './views/register/registerView';
 import { DashboardView } from './views/dashboard/dashboardView';
+import { ServiciosView } from './views/servicios/serviciosView';
+import { UsuariosView } from './views/usuarios/usuariosView';
 
 export class Router {
     private app: HTMLElement;
@@ -10,18 +12,16 @@ export class Router {
         '/login.html': LoginView,
         '/register.html': RegisterView,
         '/dashboard.html': DashboardView,
-        '/': LoginView, // Redirección por defecto
+        '/servicios.html': ServiciosView,
+        '/usuarios.html': UsuariosView,
+        '/': LoginView,
     };
-
     constructor(app: HTMLElement) {
         this.app = app;
     }
 
     init(): void {
-        // Escuchar cambios en la URL
         window.addEventListener('popstate', () => this.handleRoute());
-        
-        // Manejar clics en enlaces internos
         document.addEventListener('click', (e) => {
             const target = e.target as HTMLAnchorElement;
             if (target.tagName === 'A' && target.href.startsWith(window.location.origin)) {
@@ -31,8 +31,6 @@ export class Router {
                 this.handleRoute();
             }
         });
-
-        // Cargar la ruta inicial
         this.handleRoute();
     }
 
@@ -46,7 +44,6 @@ export class Router {
             return;
         }
 
-        // Limpiar contenedor y renderizar vista
         this.app.innerHTML = '';
         new ViewClass(this.app);
     }

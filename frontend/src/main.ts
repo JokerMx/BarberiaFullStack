@@ -1,6 +1,7 @@
 // frontend/src/main.ts
 
-import './styles.css';
+
+import './style.css';
 import { Router } from './router';
 
 document.addEventListener('DOMContentLoaded', () => {

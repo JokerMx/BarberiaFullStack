@@ -1,27 +1,29 @@
 // frontend/src/interfaces/reserva.interface.ts
-import { EstadoReserva } from '../enums/estados.enum';
 
-export interface Reserva {
-  id: number;
-  cliente_id: number;
-  servicio_id: number;
-  profesional_id: number;
-  fecha: Date;
-  hora: string;
-  estado: EstadoReserva;
-  created_at: Date;
-  updated_at: Date;
-  cliente_nombre?: string;
-  servicio_nombre?: string;
-  profesional_nombre?: string;
+export interface Servicio {
+    id: number;
+    nombre: string;
+    descripcion?: string;
+    precio: number;
+    duracionMinutos: number;
+    activo: boolean;
 }
 
-export interface CrearReservaDTO {
-  nombre_cliente: string;
-  email: string;
-  telefono: string;
-  servicio_id: number;
-  profesional_id: number;
-  fecha: string;
-  hora: string;
+export interface ReservaRequest {
+    clienteId: number;
+    servicioId: number;
+    fecha: string;       // formato: YYYY-MM-DD
+    hora: string;        // formato: HH:mm
+    notas?: string;
+}
+
+export interface ReservaResponse {
+    id: number;
+    codigo: string;
+    clienteId: number;
+    servicioId: number;
+    fecha: string;
+    hora: string;
+    estado: string;
+    notas?: string;
 }
