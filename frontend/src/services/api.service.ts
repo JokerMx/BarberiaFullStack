@@ -1,6 +1,4 @@
 // frontend/src/services/api.service.ts
-import type { ApiResponse } from '../interfaces/api-response.interface';
-
 export class ApiService {
   private static baseUrl: string = import.meta.env.VITE_API_URL || '/api';
   private static timeout: number = parseInt(import.meta.env.VITE_API_TIMEOUT || '10000');
@@ -8,7 +6,7 @@ export class ApiService {
   static async fetch<T>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
@@ -29,7 +27,9 @@ export class ApiService {
         throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      if (response.status === 204) return undefined as T;
+      const body = await response.text();
+      return (body ? JSON.parse(body) : undefined) as T;
     } catch (error) {
       if ((error as Error).name === 'AbortError') {
         throw new Error('La solicitud ha excedido el tiempo de espera');

@@ -1,10 +1,11 @@
-# 🪒 Barbería API
+# 🪒 Barbería Full Stack
 
-API REST para sistema de gestión de barbería, desarrollada con arquitectura **Domain-Driven Design (DDD)** utilizando Spring Boot 3 y Java 21.
+Sistema de gestión de barbería compuesto por una API REST en Spring Boot y un frontend TypeScript servido con Vite/Nginx. Incluye autenticación por sesión HTTP, gestión de usuarios, servicios y reservas.
 
 ## 📋 Tabla de Contenidos
 
 - [Tecnologias](#tecnologias)
+- [Frontend](#frontend)
 - [Arquitectura](#arquitectura)
 - [Requisitos Previos](#requisitos-previos)
 - [Configuracion](#configuracion)
@@ -35,7 +36,26 @@ API REST para sistema de gestión de barbería, desarrollada con arquitectura **
 | Thymeleaf | - | Motor de plantillas |
 | BCrypt (jbcrypt) | 0.4 | Encriptacion de contrasenas |
 | Spring Validation | - | Validacion de datos |
+| Spring Security | 6.x | Autenticacion por sesion y autorizacion por roles |
 | SpringDoc OpenAPI | 2.5.0 | Documentacion de API (Swagger UI) |
+| TypeScript | 6.x | Frontend |
+| Vite | 8.x | Desarrollo y build del frontend |
+| Nginx | Alpine | Servidor frontend y proxy `/api` |
+
+---
+
+## Frontend
+
+El frontend se encuentra en [`frontend/`](frontend/) y contiene las siguientes vistas:
+
+- Login y registro de usuarios.
+- Dashboard con estadisticas y reservas.
+- Catalogo y gestion CRUD de servicios para administradores.
+- Gestion de usuarios, filtro por rol, cambio de estado, rol, edicion y eliminacion.
+- Creacion y cancelacion de reservas.
+- Filtros de reservas por cliente, fecha y estado.
+
+En desarrollo, Vite redirige `/api` a `http://localhost:8080` mediante [`frontend/vite.config.ts`](frontend/vite.config.ts). En Docker, Nginx usa el servicio `backend` como proxy.
 
 ---
 
@@ -74,7 +94,10 @@ src/main/java/cl/Barberia/
 
 - Java 21+
 - Maven 3.8+
+- Node.js 20+
+- npm 10+
 - PostgreSQL 12+
+- Docker y Docker Compose (opcional)
 - IDE recomendado: IntelliJ IDEA / Eclipse / VS Code
 
 ---
@@ -85,7 +108,7 @@ src/main/java/cl/Barberia/
 
 ```bash
 git clone <url-del-repositorio>
-cd Barberia
+cd BarberiaFullStack
 ```
 
 ### 2. Configurar base de datos
@@ -100,11 +123,11 @@ CREATE DATABASE barberia_db;
 
 ### 3. Configurar propiedades
 
-El archivo [`application.properties`](src/main/resources/application.properties) contiene la configuracion base. Los perfiles especificos se encuentran en:
+El archivo [`application.properties`](backend/src/main/resources/application.properties) contiene la configuracion base. Los perfiles especificos se encuentran en:
 
-- [`application-dev.properties`](src/main/resources/application-dev.properties) - Desarrollo (H2 en memoria, Flyway desactivado, Swagger activado)
-- [`application-prod.properties`](src/main/resources/application-prod.properties) - Produccion (PostgreSQL, Flyway activado, Swagger desactivado)
-- [`application-test.properties`](src/main/resources/application-test.properties) - Testing (H2 en memoria, Flyway desactivado, Swagger desactivado)
+- [`application-dev.properties`](backend/src/main/resources/application-dev.properties) - Desarrollo (H2 en memoria, Flyway desactivado, Swagger activado)
+- [`application-prod.properties`](backend/src/main/resources/application-prod.properties) - Produccion (PostgreSQL, Flyway activado, Swagger desactivado)
+- [`application-test.properties`](backend/src/main/resources/application-test.properties) - Testing (H2 en memoria, Flyway desactivado, Swagger desactivado)
 
 **Configuracion por defecto (desarrollo):**
 - Puerto: `8080`
@@ -131,6 +154,8 @@ El perfil activo se define en `application.properties` mediante la propiedad `sp
 
 ### Modo desarrollo
 
+Backend, desde `backend/`:
+
 ```bash
 ./mvnw spring-boot:run
 ```
@@ -140,6 +165,25 @@ O con Maven instalado:
 ```bash
 mvn spring-boot:run
 ```
+
+Frontend, desde `frontend/`:
+
+```bash
+npm install
+npm run dev
+```
+
+El frontend queda disponible en `http://localhost:5173` y la API en `http://localhost:8080`.
+
+### Docker Compose
+
+Desde la raiz del proyecto:
+
+```bash
+docker compose up --build
+```
+
+Esto inicia PostgreSQL, backend y frontend. La aplicación web queda en `http://localhost:5173`.
 
 ### Compilar y ejecutar JAR
 
@@ -154,6 +198,14 @@ java -jar target/barberia-api-1.0.0.jar
 ./mvnw test
 ```
 
+### Validar frontend
+
+Desde `frontend/`:
+
+```bash
+npm run build
+```
+
 ---
 
 ## 🔌 Endpoints
@@ -163,6 +215,7 @@ java -jar target/barberia-api-1.0.0.jar
 | Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
 | `POST` | `/api/auth/login` | Autenticacion de usuario |
+| `POST` | `/api/auth/logout` | Cierra la sesion HTTP |
 | `GET` | `/api/auth/health` | Health check de la API |
 
 ### Usuarios
@@ -177,6 +230,28 @@ java -jar target/barberia-api-1.0.0.jar
 | `PUT` | `/api/usuarios/{id}` | Actualizar usuario |
 | `DELETE` | `/api/usuarios/{id}` | Eliminar usuario |
 
+### Servicios
+
+| Metodo | Endpoint | Permiso | Descripcion |
+|--------|----------|---------|-------------|
+| `GET` | `/api/servicios` | Publico | Listar servicios activos |
+| `GET` | `/api/servicios/{id}` | Publico | Obtener un servicio |
+| `POST` | `/api/servicios` | `ADMIN` | Crear servicio |
+| `PUT` | `/api/servicios/{id}` | `ADMIN` | Actualizar servicio |
+| `DELETE` | `/api/servicios/{id}` | `ADMIN` | Desactivar servicio |
+
+### Reservas
+
+| Metodo | Endpoint | Permiso | Descripcion |
+|--------|----------|---------|-------------|
+| `GET` | `/api/reservas` | Autenticado | Listar reservas |
+| `GET` | `/api/reservas/cliente/{clienteId}` | Autenticado | Filtrar por cliente |
+| `GET` | `/api/reservas/fecha/{fecha}` | Autenticado | Filtrar por fecha `YYYY-MM-DD` |
+| `GET` | `/api/reservas/estado/{estado}` | Autenticado | Filtrar por estado |
+| `POST` | `/api/reservas` | Autenticado | Crear reserva |
+| `PUT` | `/api/reservas/{id}/estado?estado={estado}` | `ADMIN` | Cambiar estado |
+| `DELETE` | `/api/reservas/{id}` | Autenticado | Cancelar reserva |
+
 ### Web
 
 | Metodo | Endpoint | Descripcion |
@@ -189,7 +264,7 @@ java -jar target/barberia-api-1.0.0.jar
 
 ### Migraciones (Flyway)
 
-Las migraciones se encuentran en [`src/main/resources/db/migration/`](src/main/resources/db/migration/):
+Las migraciones se encuentran en [`backend/src/main/resources/db/migration/`](backend/src/main/resources/db/migration/):
 
 - **V1__create_usuarios_table.sql**: Crea la tabla `usuarios` con indices
 
@@ -248,10 +323,26 @@ Las migraciones se encuentran en [`src/main/resources/db/migration/`](src/main/r
 - **Encriptacion de contrasenas**: BCrypt
 - **Bloqueo de cuenta**: 5 intentos fallidos bloquean la cuenta por 30 minutos
 - **Validacion de datos**: Spring Validation en DTOs
+- **Sesion HTTP**: el login crea una sesion y el frontend la conserva mediante cookie `JSESSIONID`
+- **Autorizacion**: Spring Security protege las rutas de usuarios y las operaciones administrativas
+- **Roles**: `ADMIN` administra usuarios, servicios y estados de reservas; los usuarios autenticados pueden crear y consultar reservas
+- **Nota**: el endpoint publico de registro recibe el rol enviado por el cliente; para impedir que un usuario se registre como `ADMIN`, el backend debe restringir ese valor a `CLIENTE`
 
 ---
 
 ## 📁 Estructura del Proyecto
+
+La estructura principal separa la aplicación backend y el cliente web:
+
+```
+BarberiaFullStack/
+├── backend/     # Spring Boot, REST, seguridad, JPA y Flyway
+├── frontend/    # TypeScript, Vite, vistas y servicios API
+├── docker-compose.yml
+└── README.md
+```
+
+### Estructura del backend
 
 ```
 Barberia/

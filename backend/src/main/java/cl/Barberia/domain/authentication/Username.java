@@ -13,8 +13,10 @@ public class Username {
         if (value.length() < 3 || value.length() > 50) {
             throw new IllegalArgumentException("El nombre de usuario debe tener entre 3 y 50 caracteres");
         }
-        if (!value.matches("^[a-zA-Z0-9_]+$")) {
-            throw new IllegalArgumentException("El nombre de usuario solo puede contener letras, números y guión bajo");
+        boolean usernameFormat = value.matches("^[a-zA-Z0-9_]+$");
+        boolean emailFormat = value.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+        if (!usernameFormat && !emailFormat) {
+            throw new IllegalArgumentException("El nombre de usuario debe contener letras, números y guión bajo, o ser un correo electrónico válido");
         }
         this.value = value;
     }

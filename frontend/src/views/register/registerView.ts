@@ -24,7 +24,7 @@ export class RegisterView {
                     </div>
                     <div class="form-group">
                         <label for="username">Nombre de Usuario</label>
-                        <input type="text" id="username" placeholder="juanperez" required />
+                        <input type="text" id="username" placeholder="juanperez o juan@correo.com" maxlength="50" required />
                     </div>
                     <div class="form-group">
                         <label for="email">Correo Electrónico</label>
@@ -44,7 +44,7 @@ export class RegisterView {
                     </div>
                     <div id="register-error" class="error hidden"></div>
                     <div id="register-success" class="success hidden"></div>
-                    <button type="submit">Registrarse</button>
+                    <button type="submit" id="register-btn">Registrarse</button>
                 </form>
                 <p class="login-link">
                     ¿Ya tienes cuenta? <a href="/login.html">Inicia sesión aquí</a>
@@ -72,6 +72,7 @@ export class RegisterView {
 
         const errorElement = document.getElementById('register-error') as HTMLDivElement;
         const successElement = document.getElementById('register-success') as HTMLDivElement;
+        const submitButton = document.getElementById('register-btn') as HTMLButtonElement;
 
         // Ocultar mensajes anteriores
         errorElement.classList.add('hidden');
@@ -101,6 +102,9 @@ export class RegisterView {
             rol,
         };
 
+        submitButton.disabled = true;
+        submitButton.textContent = 'Registrando...';
+
         try {
             const response = await UserService.register(data);
             successElement.textContent = response.mensaje || 'Usuario registrado exitosamente.';
@@ -114,6 +118,9 @@ export class RegisterView {
 
         } catch (error: any) {
             this.showError(error.message || 'Error al registrar usuario.', errorElement);
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Registrarse';
         }
     }
 

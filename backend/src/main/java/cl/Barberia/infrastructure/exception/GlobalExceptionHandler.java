@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -17,7 +18,19 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ===== ERRORES DE NEGOCIO (422 Unprocessable Entity) =====
+    // ===== ERRORES DE SWAGGER =====
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(
+            NoResourceFoundException ex, WebRequest request) {
+        String path = request.getDescription(false).replace("uri=", "");
+        if (path.contains("swagger-ui") || path.contains("v3/api-docs")) {
+            return buildErrorResponse("Swagger no disponible en este entorno",
+                HttpStatus.NOT_FOUND, request);
+        }
+        return buildErrorResponse(ex.getMessage(), HttpStatus.NOT_FOUND, request);
+    }
+
+    // ===== ERRORES DE NEGOCIO =====
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<Map<String, Object>> handleCredencialesInvalidas(
             CredencialesInvalidasException ex, WebRequest request) {
@@ -30,17 +43,17 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(ex.getMessage(), HttpStatus.LOCKED, request);
     }
 
-    // ===== ERRORES DE VALIDACIÓN (400 Bad Request) =====
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(
             IllegalArgumentException ex, WebRequest request) {
         return buildErrorResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request);
     }
 
+    // ===== ERRORES DE VALIDACIÓN =====
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex, WebRequest request) {
-        
+
         String errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -50,28 +63,47 @@ public class GlobalExceptionHandler {
         return buildErrorResponse("Error de validación: " + errors, HttpStatus.BAD_REQUEST, request);
     }
 
-    // ===== RECURSO NO ENCONTRADO (404 Not Found) =====
+    // ===== ERRORES DE TIPO (ej: conversión de String a Long) =====
+    @ExceptionHandler(org.springframework.core.convert.ConversionFailedException.class)
+    public ResponseEntity<Map<String, Object>> handleConversionFailed(
+            org.springframework.core.convert.ConversionFailedException ex, WebRequest request) {
+        return buildErrorResponse("Error en el formato del parámetro: " + ex.getMessage(),
+                HttpStatus.BAD_REQUEST, request);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, WebRequest request) {
+        return buildErrorResponse("Error en el tipo de dato: " + ex.getMessage(),
+                HttpStatus.BAD_REQUEST, request);
+    }
+
+    // ===== ERRORES GENÉRICOS =====
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(
             RuntimeException ex, WebRequest request) {
-        HttpStatus status = ex.getMessage().contains("no encontrado") 
-                ? HttpStatus.NOT_FOUND 
-                : HttpStatus.INTERNAL_SERVER_ERROR;
-        return buildErrorResponse(ex.getMessage(), status, request);
+        String message = ex.getMessage();
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+
+        // Si el mensaje contiene "no encontrado", devolver 404
+        if (message != null && message.contains("no encontrado")) {
+            status = HttpStatus.NOT_FOUND;
+        }
+
+        return buildErrorResponse(message, status, request);
     }
 
-    // ===== ERRORES GENÉRICOS (500 Internal Server Error) =====
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(
             Exception ex, WebRequest request) {
-        return buildErrorResponse("Error interno del servidor", 
+        return buildErrorResponse("Error interno del servidor: " + ex.getMessage(),
                 HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 
     // ===== MÉTODO AUXILIAR =====
     private ResponseEntity<Map<String, Object>> buildErrorResponse(
             String message, HttpStatus status, WebRequest request) {
-        
+
         Map<String, Object> errorResponse = new LinkedHashMap<>();
         errorResponse.put("timestamp", LocalDateTime.now());
         errorResponse.put("status", status.value());

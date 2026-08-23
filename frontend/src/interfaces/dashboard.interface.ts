@@ -1,6 +1,7 @@
 // frontend/src/interfaces/dashboard.interface.ts
 
 export interface UserInfo {
+    id?: number;
     username: string;
     rol: string;
     email?: string;

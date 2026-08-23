@@ -27,12 +27,15 @@ export class UserService {
         });
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ mensaje: 'Error al registrar usuario' }));
-            throw new Error(errorData.mensaje || 'Error al registrar usuario');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.mensaje || errorData.message || errorData.error || 'Error al registrar usuario');
         }
 
-        const text = await response.text();
-        return { mensaje: text };
+        const responseData = await response.json().catch(() => null);
+        return {
+            mensaje: responseData?.mensaje || 'Usuario registrado exitosamente.',
+            usuario: responseData?.usuario,
+        };
     }
 
     // ===== LISTAR TODOS LOS USUARIOS =====
@@ -41,6 +44,12 @@ export class UserService {
         if (!response.ok) {
             throw new Error('Error al cargar usuarios');
         }
+        return response.json();
+    }
+
+    static async listarPorRol(rol: string): Promise<User[]> {
+        const response = await fetch(`${API_BASE_URL}/usuarios/rol/${encodeURIComponent(rol)}`);
+        if (!response.ok) throw new Error('Error al filtrar usuarios');
         return response.json();
     }
 

@@ -1,6 +1,7 @@
 // frontend/src/views/usuarios/usuariosView.ts
 
 import { UserService, type User } from '../../services/userService';
+import { AuthService } from '../../services/authService';
 
 export class UsuariosView {
     private container: HTMLElement;
@@ -64,6 +65,12 @@ export class UsuariosView {
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button id="refresh-usuarios-btn" class="btn-refresh">🔄 Actualizar</button>
                             <button id="btn-nuevo-usuario" class="btn-primary">➕ Nuevo Usuario</button>
+                            <select id="filtro-rol-usuario">
+                                <option value="">Todos los roles</option>
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="BARBERO">BARBERO</option>
+                                <option value="CLIENTE">CLIENTE</option>
+                            </select>
                         </div>
                     </div>
 
@@ -81,8 +88,7 @@ export class UsuariosView {
 
         // Eventos
         document.getElementById('logout-btn')?.addEventListener('click', () => {
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
+            void AuthService.logout();
         });
 
         document.getElementById('refresh-usuarios-btn')?.addEventListener('click', () => {
@@ -96,6 +102,7 @@ export class UsuariosView {
         document.getElementById('btn-buscar')?.addEventListener('click', () => {
             this.buscarUsuario();
         });
+        document.getElementById('filtro-rol-usuario')?.addEventListener('change', () => this.cargarUsuarios());
 
         document.getElementById('buscar-usuario')?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -111,7 +118,8 @@ export class UsuariosView {
         container.innerHTML = `<p class="loading">Cargando usuarios...</p>`;
 
         try {
-            this.usuarios = await UserService.listarUsuarios();
+            const rol = (document.getElementById('filtro-rol-usuario') as HTMLSelectElement)?.value;
+            this.usuarios = rol ? await UserService.listarPorRol(rol) : await UserService.listarUsuarios();
             this.renderUsuarios(this.usuarios);
         } catch (error) {
             container.innerHTML = `<p class="error">❌ Error al cargar los usuarios</p>`;
@@ -168,6 +176,7 @@ export class UsuariosView {
                                     ${usuario.bloqueadoHasta ? `<span class="bloqueado-hasta">🔒 hasta ${new Date(usuario.bloqueadoHasta).toLocaleDateString()}</span>` : ''}
                                 </td>
                                 <td>
+                                        <button class="btn-editar-usuario" data-id="${usuario.id}">✏️</button>
                                     <button class="btn-eliminar" data-id="${usuario.id}" ${usuario.id === 1 ? 'disabled' : ''}>
                                         🗑️
                                     </button>
@@ -229,6 +238,32 @@ export class UsuariosView {
                     } catch (error) {
                         alert('Error al eliminar el usuario');
                     }
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-editar-usuario').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+                const id = Number((e.currentTarget as HTMLElement).dataset.id);
+                const usuario = this.usuarios.find(item => item.id === id);
+                if (!usuario) return;
+
+                const nombreCompleto = prompt('Nombre completo:', usuario.nombreCompleto);
+                if (nombreCompleto === null) return;
+                const email = prompt('Correo electrónico:', usuario.email);
+                if (email === null) return;
+                const password = prompt('Nueva contraseña (opcional):', '');
+                if (password === null) return;
+
+                try {
+                    await UserService.actualizarUsuario(id, {
+                        nombreCompleto,
+                        email,
+                        ...(password ? { password } : {}),
+                    });
+                    await this.cargarUsuarios();
+                } catch (error) {
+                    alert(error instanceof Error ? error.message : 'Error al actualizar el usuario');
                 }
             });
         });

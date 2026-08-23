@@ -59,12 +59,12 @@ export class DashboardService {
     // ===== OBTENER RESERVAS RECIENTES (REALES) =====
     static async getReservasRecientes(limite: number = 5): Promise<ReservaReciente[]> {
         try {
-            const response = await fetch(`${API_BASE_URL}/reservas?limite=${limite}`);
+            const response = await fetch(`${API_BASE_URL}/reservas`);
             if (!response.ok) {
                 throw new Error('Error al cargar reservas');
             }
             const data = await response.json();
-            return data.map((reserva: any) => ({
+            return data.slice(0, limite).map((reserva: any) => ({
                 id: reserva.id,
                 codigo: reserva.codigo || `RES-${String(reserva.id).padStart(6, '0')}`,
                 cliente: reserva.clienteNombre || `Cliente #${reserva.clienteId}`,
@@ -78,6 +78,38 @@ export class DashboardService {
             // Retornar datos de ejemplo si no hay endpoint
             return this.getReservasEjemplo();
         }
+    }
+
+    static async getReservasPorCliente(clienteId: number): Promise<ReservaReciente[]> {
+        return this.mapReservas(`/reservas/cliente/${clienteId}`);
+    }
+
+    static async getReservasPorFecha(fecha: string): Promise<ReservaReciente[]> {
+        return this.mapReservas(`/reservas/fecha/${encodeURIComponent(fecha)}`);
+    }
+
+    static async getReservasPorEstado(estado: string): Promise<ReservaReciente[]> {
+        return this.mapReservas(`/reservas/estado/${encodeURIComponent(estado)}`);
+    }
+
+    private static async mapReservas(endpoint: string): Promise<ReservaReciente[]> {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`);
+        if (!response.ok) throw new Error('Error al cargar reservas');
+        const data = await response.json();
+        return data.map((reserva: any) => ({
+            id: reserva.id,
+            codigo: reserva.codigo || `RES-${String(reserva.id).padStart(6, '0')}`,
+            cliente: reserva.clienteNombre || `Cliente #${reserva.clienteId}`,
+            servicio: reserva.servicioNombre || `Servicio #${reserva.servicioId}`,
+            fecha: reserva.fecha,
+            hora: reserva.hora,
+            estado: reserva.estado || 'PENDIENTE',
+        }));
+    }
+
+    static async cancelarReserva(id: number): Promise<void> {
+        const response = await fetch(`${API_BASE_URL}/reservas/${id}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Error al cancelar la reserva');
     }
 
     // ===== DATOS DE EJEMPLO (FALLBACK) =====

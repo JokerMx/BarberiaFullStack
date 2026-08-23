@@ -8,5 +8,5 @@ public class RegistroUsuarioRequest {
     private String email;
     private String nombreCompleto;
     private String password;
-    private String rol; // ADMIN, BARBERO, CLIENTE
+    private String rol;
 }

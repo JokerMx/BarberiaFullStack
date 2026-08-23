@@ -1,7 +1,9 @@
 // frontend/src/views/dashboard/dashboardView.ts
 
 import { DashboardService } from '../../services/dashboardService';
+import { AuthService } from '../../services/authService';
 import type { UserInfo, ReservaReciente } from '../../interfaces/dashboard.interface';
+import { ReservaModal } from '../reserva/reservaModal';
 
 export class DashboardView {
     private container: HTMLElement;
@@ -87,7 +89,17 @@ export class DashboardView {
                 <section class="reservas-section">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                         <h2>📋 Reservas Recientes</h2>
-                        <button id="refresh-reservas-btn" class="btn-refresh">🔄 Actualizar</button>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <input type="date" id="filtro-fecha-reserva" />
+                            <select id="filtro-estado-reserva">
+                                <option value="">Todos los estados</option>
+                                <option value="PENDIENTE">Pendiente</option>
+                                <option value="CONFIRMADA">Confirmada</option>
+                                <option value="COMPLETADA">Completada</option>
+                                <option value="CANCELADA">Cancelada</option>
+                            </select>
+                            <button id="refresh-reservas-btn" class="btn-refresh">🔄 Actualizar</button>
+                        </div>
                     </div>
                     <div id="reservas-list" class="reservas-list">
                         <p class="loading">Cargando reservas...</p>
@@ -118,33 +130,30 @@ export class DashboardView {
     private bindEvents(): void {
         // Logout
         document.getElementById('logout-btn')?.addEventListener('click', () => {
-            localStorage.removeItem('user');
             if (this.refreshInterval) {
                 clearInterval(this.refreshInterval);
             }
-            window.location.href = '/login.html';
+            void AuthService.logout();
         });
 
         // Refrescar reservas
         document.getElementById('refresh-reservas-btn')?.addEventListener('click', () => {
             this.loadReservas();
         });
+        document.getElementById('filtro-fecha-reserva')?.addEventListener('change', () => this.loadReservas());
+        document.getElementById('filtro-estado-reserva')?.addEventListener('change', () => this.loadReservas());
 
         // ===== NUEVA RESERVA (desde el header) =====
         document.getElementById('btn-nueva-reserva-header')?.addEventListener('click', () => {
-            import('../reserva/reservaModal').then(({ ReservaModal }) => {
-                new ReservaModal(undefined, () => {
-                    this.loadData(false);
-                });
+            new ReservaModal(undefined, () => {
+                this.loadData(false);
             });
         });
 
         // ===== NUEVA RESERVA (desde acciones) =====
         document.getElementById('btn-nueva-reserva')?.addEventListener('click', () => {
-            import('../reserva/reservaModal').then(({ ReservaModal }) => {
-                new ReservaModal(undefined, () => {
-                    this.loadData(false);
-                });
+            new ReservaModal(undefined, () => {
+                this.loadData(false);
             });
         });
     }
@@ -182,7 +191,18 @@ export class DashboardView {
         }
 
         try {
-            const reservas = await DashboardService.getReservasRecientes(10);
+            const fecha = (document.getElementById('filtro-fecha-reserva') as HTMLInputElement)?.value;
+            const estado = (document.getElementById('filtro-estado-reserva') as HTMLSelectElement)?.value;
+            let reservas: ReservaReciente[];
+            if (this.user?.rol === 'CLIENTE' && this.user.id) {
+                reservas = await DashboardService.getReservasPorCliente(this.user.id);
+            } else if (fecha) {
+                reservas = await DashboardService.getReservasPorFecha(fecha);
+            } else if (estado) {
+                reservas = await DashboardService.getReservasPorEstado(estado);
+            } else {
+                reservas = await DashboardService.getReservasRecientes(10);
+            }
             this.renderReservas(reservas);
         } catch (error) {
             container.innerHTML = `<p class="error">❌ Error al cargar las reservas</p>`;
@@ -209,7 +229,7 @@ export class DashboardView {
                             <th>Fecha</th>
                             <th>Hora</th>
                             <th>Estado</th>
-                            ${this.user?.rol === 'ADMIN' ? '<th>Acciones</th>' : ''}
+                            ${this.user?.rol === 'ADMIN' || this.user?.rol === 'CLIENTE' ? '<th>Acciones</th>' : ''}
                         </tr>
                     </thead>
                     <tbody>
@@ -230,7 +250,9 @@ export class DashboardView {
                                             <option value="CANCELADA" ${reserva.estado === 'CANCELADA' ? 'selected' : ''}>CANCELADA</option>
                                         </select>
                                     </td>
-                                ` : ''}
+                                ` : this.user?.rol === 'CLIENTE' && reserva.estado !== 'CANCELADA' ? `
+                                    <td><button class="btn-cancelar-reserva" data-id="${reserva.id}">Cancelar</button></td>
+                                ` : this.user?.rol === 'CLIENTE' ? '<td></td>' : ''}
                             </tr>
                         `).join('')}
                     </tbody>
@@ -256,6 +278,19 @@ export class DashboardView {
                 });
             });
         }
+
+        document.querySelectorAll('.btn-cancelar-reserva').forEach((button) => {
+            button.addEventListener('click', async (event) => {
+                const id = Number((event.currentTarget as HTMLElement).dataset.id);
+                if (!id || !confirm('¿Cancelar esta reserva?')) return;
+                try {
+                    await DashboardService.cancelarReserva(id);
+                    await this.loadReservas(false);
+                } catch {
+                    alert('Error al cancelar la reserva');
+                }
+            });
+        });
     }
 
     public destroy(): void {

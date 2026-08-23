@@ -1,24 +1,44 @@
 package cl.Barberia.application.authentication.DTOs;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginResponse {
-    private final boolean success;
-    private final String mensaje;
-    private final String username;
-    private final String rol;
-    private final boolean bloqueado;
+    private boolean success;
+    private String mensaje;
+    private String username;
+    private String rol;
+    private boolean bloqueado;
 
     public static LoginResponse success(String username, String rol) {
-        return new LoginResponse(true, "Login exitoso", username, rol, false);
+        return LoginResponse.builder()
+            .success(true)
+            .mensaje("Login exitoso")
+            .username(username)
+            .rol(rol)
+            .bloqueado(false)
+            .build();
     }
 
     public static LoginResponse failure(String mensaje) {
-        return new LoginResponse(false, mensaje, null, null, false);
+        return LoginResponse.builder()
+            .success(false)
+            .mensaje(mensaje)
+            .bloqueado(false)
+            .build();
     }
 
     public static LoginResponse bloqueado(String mensaje) {
-        return new LoginResponse(false, mensaje, null, null, true);
+        return LoginResponse.builder()
+            .success(false)
+            .mensaje(mensaje)
+            .bloqueado(true)
+            .build();
     }
 }

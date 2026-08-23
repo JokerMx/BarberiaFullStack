@@ -1,6 +1,8 @@
 // frontend/src/views/servicios/serviciosView.ts
 
-import { DashboardService } from '../../services/dashboardService';
+import { ServicioService } from '../../services/servicio.service';
+import { AuthService } from '../../services/authService';
+import type { Servicio, ServicioRequest } from '../../interfaces/servicio.interface';
 import { ReservaModal } from '../reserva/reservaModal';
 
 export class ServiciosView {
@@ -52,6 +54,17 @@ export class ServiciosView {
                             <button id="nueva-reserva-btn" class="btn-primary">➕ Nueva Reserva</button>
                         </div>
                     </div>
+                    ${this.user?.rol === 'ADMIN' ? `
+                        <form id="servicio-form" class="servicio-admin-form">
+                            <input type="hidden" id="servicio-id" />
+                            <input type="text" id="servicio-nombre" placeholder="Nombre del servicio" required maxlength="100" />
+                            <input type="number" id="servicio-precio" placeholder="Precio" min="0" step="0.01" required />
+                            <input type="number" id="servicio-duracion" placeholder="Duración (minutos)" min="1" required />
+                            <input type="text" id="servicio-descripcion" placeholder="Descripción (opcional)" />
+                            <button type="submit" class="btn-primary">Guardar servicio</button>
+                            <button type="button" id="cancelar-edicion-servicio" class="btn-back" hidden>Cancelar</button>
+                        </form>
+                    ` : ''}
                     <div id="servicios-list" class="servicios-grid">
                         <p class="loading">Cargando servicios...</p>
                     </div>
@@ -61,8 +74,7 @@ export class ServiciosView {
 
         // Eventos
         document.getElementById('logout-btn')?.addEventListener('click', () => {
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
+            void AuthService.logout();
         });
 
         document.getElementById('refresh-servicios-btn')?.addEventListener('click', () => {
@@ -75,6 +87,14 @@ export class ServiciosView {
                 console.log('Reserva creada exitosamente');
             });
         });
+
+        if (this.user?.rol === 'ADMIN') {
+            document.getElementById('servicio-form')?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                this.guardarServicio();
+            });
+            document.getElementById('cancelar-edicion-servicio')?.addEventListener('click', () => this.limpiarFormulario());
+        }
     }
 
     private async loadServicios(): Promise<void> {
@@ -84,7 +104,7 @@ export class ServiciosView {
         container.innerHTML = `<p class="loading">Cargando servicios...</p>`;
 
         try {
-            const servicios = await DashboardService.getServiciosActivos();
+            const servicios = await ServicioService.getAll();
 
             if (servicios.length === 0) {
                 container.innerHTML = `<p class="empty">📭 No hay servicios disponibles</p>`;
@@ -93,7 +113,7 @@ export class ServiciosView {
 
             container.innerHTML = `
                 <div class="servicios-grid-inner">
-                    ${servicios.map((servicio: any) => `
+                    ${servicios.map((servicio: Servicio) => `
                         <div class="servicio-card" data-id="${servicio.id}">
                             <h3>${servicio.nombre}</h3>
                             <p class="servicio-precio">💰 $${servicio.precio.toLocaleString()}</p>
@@ -101,6 +121,10 @@ export class ServiciosView {
                             ${servicio.descripcion ? `<p class="servicio-descripcion">${servicio.descripcion}</p>` : ''}
                             ${servicio.activo !== false ? '<span class="badge-activo">✅ Activo</span>' : '<span class="badge-inactivo">❌ Inactivo</span>'}
                             <button class="btn-reservar" data-id="${servicio.id}">📅 Reservar</button>
+                            ${this.user?.rol === 'ADMIN' ? `
+                                <button class="btn-editar-servicio" data-id="${servicio.id}">✏️ Editar</button>
+                                <button class="btn-desactivar-servicio" data-id="${servicio.id}">🗑️ Desactivar</button>
+                            ` : ''}
                         </div>
                     `).join('')}
                 </div>
@@ -137,8 +161,65 @@ export class ServiciosView {
                 });
             });
 
+            document.querySelectorAll('.btn-editar-servicio').forEach((btn) => {
+                btn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const id = Number((event.currentTarget as HTMLElement).dataset.id);
+                    const servicio = servicios.find(item => item.id === id);
+                    if (servicio) this.cargarFormulario(servicio);
+                });
+            });
+
+            document.querySelectorAll('.btn-desactivar-servicio').forEach((btn) => {
+                btn.addEventListener('click', async (event) => {
+                    event.stopPropagation();
+                    const id = Number((event.currentTarget as HTMLElement).dataset.id);
+                    if (!id || !confirm('¿Desactivar este servicio?')) return;
+                    try {
+                        await ServicioService.deactivate(id);
+                        await this.loadServicios();
+                    } catch (error) {
+                        alert(error instanceof Error ? error.message : 'Error al desactivar el servicio');
+                    }
+                });
+            });
+
         } catch (error) {
             container.innerHTML = `<p class="error">❌ Error al cargar los servicios</p>`;
+        }
+    }
+
+    private cargarFormulario(servicio: Servicio): void {
+        (document.getElementById('servicio-id') as HTMLInputElement).value = String(servicio.id);
+        (document.getElementById('servicio-nombre') as HTMLInputElement).value = servicio.nombre;
+        (document.getElementById('servicio-precio') as HTMLInputElement).value = String(servicio.precio);
+        (document.getElementById('servicio-duracion') as HTMLInputElement).value = String(servicio.duracionMinutos);
+        (document.getElementById('servicio-descripcion') as HTMLInputElement).value = servicio.descripcion || '';
+        (document.getElementById('cancelar-edicion-servicio') as HTMLButtonElement).hidden = false;
+    }
+
+    private limpiarFormulario(): void {
+        (document.getElementById('servicio-form') as HTMLFormElement)?.reset();
+        (document.getElementById('servicio-id') as HTMLInputElement).value = '';
+        (document.getElementById('cancelar-edicion-servicio') as HTMLButtonElement).hidden = true;
+    }
+
+    private async guardarServicio(): Promise<void> {
+        const id = Number((document.getElementById('servicio-id') as HTMLInputElement).value);
+        const data: ServicioRequest = {
+            nombre: (document.getElementById('servicio-nombre') as HTMLInputElement).value.trim(),
+            precio: Number((document.getElementById('servicio-precio') as HTMLInputElement).value),
+            duracionMinutos: Number((document.getElementById('servicio-duracion') as HTMLInputElement).value),
+            descripcion: (document.getElementById('servicio-descripcion') as HTMLInputElement).value.trim(),
+        };
+
+        try {
+            if (id) await ServicioService.update(id, data);
+            else await ServicioService.create(data);
+            this.limpiarFormulario();
+            await this.loadServicios();
+        } catch (error) {
+            alert(error instanceof Error ? error.message : 'Error al guardar el servicio');
         }
     }
 }
