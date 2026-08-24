@@ -52,19 +52,9 @@ export class ServiciosView {
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button id="refresh-servicios-btn" class="btn-refresh">🔄 Actualizar</button>
                             <button id="nueva-reserva-btn" class="btn-primary">➕ Nueva Reserva</button>
+                            ${this.user?.rol === 'ADMIN' ? '<button id="nuevo-servicio-btn" class="btn-primary">➕ Nuevo Servicio</button>' : ''}
                         </div>
                     </div>
-                    ${this.user?.rol === 'ADMIN' ? `
-                        <form id="servicio-form" class="servicio-admin-form">
-                            <input type="hidden" id="servicio-id" />
-                            <input type="text" id="servicio-nombre" placeholder="Nombre del servicio" required maxlength="100" />
-                            <input type="number" id="servicio-precio" placeholder="Precio" min="0" step="0.01" required />
-                            <input type="number" id="servicio-duracion" placeholder="Duración (minutos)" min="1" required />
-                            <input type="text" id="servicio-descripcion" placeholder="Descripción (opcional)" />
-                            <button type="submit" class="btn-primary">Guardar servicio</button>
-                            <button type="button" id="cancelar-edicion-servicio" class="btn-back" hidden>Cancelar</button>
-                        </form>
-                    ` : ''}
                     <div id="servicios-list" class="servicios-grid">
                         <p class="loading">Cargando servicios...</p>
                     </div>
@@ -89,11 +79,7 @@ export class ServiciosView {
         });
 
         if (this.user?.rol === 'ADMIN') {
-            document.getElementById('servicio-form')?.addEventListener('submit', (event) => {
-                event.preventDefault();
-                this.guardarServicio();
-            });
-            document.getElementById('cancelar-edicion-servicio')?.addEventListener('click', () => this.limpiarFormulario());
+            document.getElementById('nuevo-servicio-btn')?.addEventListener('click', () => this.abrirFormulario());
         }
     }
 
@@ -120,11 +106,13 @@ export class ServiciosView {
                             <p class="servicio-duracion">⏱️ ${servicio.duracionMinutos} minutos</p>
                             ${servicio.descripcion ? `<p class="servicio-descripcion">${servicio.descripcion}</p>` : ''}
                             ${servicio.activo !== false ? '<span class="badge-activo">✅ Activo</span>' : '<span class="badge-inactivo">❌ Inactivo</span>'}
-                            <button class="btn-reservar" data-id="${servicio.id}">📅 Reservar</button>
-                            ${this.user?.rol === 'ADMIN' ? `
-                                <button class="btn-editar-servicio" data-id="${servicio.id}">✏️ Editar</button>
-                                <button class="btn-desactivar-servicio" data-id="${servicio.id}">🗑️ Desactivar</button>
-                            ` : ''}
+                            <div class="servicio-card-actions">
+                                <button class="btn-reservar" data-id="${servicio.id}">📅 Reservar</button>
+                                ${this.user?.rol === 'ADMIN' ? `
+                                    <button class="btn-editar-servicio" data-id="${servicio.id}">✏️ Editar</button>
+                                    <button class="btn-desactivar-servicio" data-id="${servicio.id}">🗑️ Desactivar</button>
+                                ` : ''}
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -134,7 +122,7 @@ export class ServiciosView {
             document.querySelectorAll('.servicio-card').forEach((card) => {
                 card.addEventListener('click', (e) => {
                     // Si el clic fue en el botón "Reservar", no abrir el modal dos veces
-                    if ((e.target as HTMLElement).classList.contains('btn-reservar')) {
+                    if ((e.target as HTMLElement).closest('button')) {
                         return;
                     }
                     const id = parseInt(card.getAttribute('data-id') || '0');
@@ -166,7 +154,7 @@ export class ServiciosView {
                     event.stopPropagation();
                     const id = Number((event.currentTarget as HTMLElement).dataset.id);
                     const servicio = servicios.find(item => item.id === id);
-                    if (servicio) this.cargarFormulario(servicio);
+                    if (servicio) this.abrirFormulario(servicio);
                 });
             });
 
@@ -189,37 +177,77 @@ export class ServiciosView {
         }
     }
 
-    private cargarFormulario(servicio: Servicio): void {
-        (document.getElementById('servicio-id') as HTMLInputElement).value = String(servicio.id);
-        (document.getElementById('servicio-nombre') as HTMLInputElement).value = servicio.nombre;
-        (document.getElementById('servicio-precio') as HTMLInputElement).value = String(servicio.precio);
-        (document.getElementById('servicio-duracion') as HTMLInputElement).value = String(servicio.duracionMinutos);
-        (document.getElementById('servicio-descripcion') as HTMLInputElement).value = servicio.descripcion || '';
-        (document.getElementById('cancelar-edicion-servicio') as HTMLButtonElement).hidden = false;
-    }
+    private abrirFormulario(servicio?: Servicio): void {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay servicio-modal-overlay';
+        document.body.classList.add('modal-open');
+        overlay.innerHTML = `
+            <div class="modal-content servicio-modal" role="dialog" aria-modal="true" aria-labelledby="servicio-modal-title">
+                <div class="modal-header">
+                    <h2 id="servicio-modal-title">${servicio ? 'Editar servicio' : 'Nuevo servicio'}</h2>
+                    <button type="button" class="modal-close" aria-label="Cerrar">✕</button>
+                </div>
+                <form id="servicio-form" class="modal-body">
+                    <input type="text" id="servicio-nombre" placeholder="Nombre del servicio" maxlength="100" required />
+                    <input type="number" id="servicio-precio" placeholder="Precio" min="0" step="0.01" required />
+                    <input type="number" id="servicio-duracion" placeholder="Duración (minutos)" min="1" required />
+                    <textarea id="servicio-descripcion" rows="3" maxlength="500" placeholder="Descripción (opcional)"></textarea>
+                    <div id="servicio-form-error" class="error hidden"></div>
+                    <div class="servicio-modal-actions">
+                        <button type="button" class="btn-back servicio-modal-cancel">Cancelar</button>
+                        <button type="submit" class="btn-confirmar">Guardar servicio</button>
+                    </div>
+                </form>
+            </div>
+        `;
 
-    private limpiarFormulario(): void {
-        (document.getElementById('servicio-form') as HTMLFormElement)?.reset();
-        (document.getElementById('servicio-id') as HTMLInputElement).value = '';
-        (document.getElementById('cancelar-edicion-servicio') as HTMLButtonElement).hidden = true;
-    }
-
-    private async guardarServicio(): Promise<void> {
-        const id = Number((document.getElementById('servicio-id') as HTMLInputElement).value);
-        const data: ServicioRequest = {
-            nombre: (document.getElementById('servicio-nombre') as HTMLInputElement).value.trim(),
-            precio: Number((document.getElementById('servicio-precio') as HTMLInputElement).value),
-            duracionMinutos: Number((document.getElementById('servicio-duracion') as HTMLInputElement).value),
-            descripcion: (document.getElementById('servicio-descripcion') as HTMLInputElement).value.trim(),
+        document.body.appendChild(overlay);
+        const close = (): void => {
+            overlay.remove();
+            document.body.classList.remove('modal-open');
         };
+        overlay.querySelector('.modal-close')?.addEventListener('click', close);
+        overlay.querySelector('.servicio-modal-cancel')?.addEventListener('click', close);
+        overlay.addEventListener('click', event => {
+            if (event.target === overlay) close();
+        });
+
+        if (servicio) {
+            (overlay.querySelector('#servicio-nombre') as HTMLInputElement).value = servicio.nombre;
+            (overlay.querySelector('#servicio-precio') as HTMLInputElement).value = String(servicio.precio);
+            (overlay.querySelector('#servicio-duracion') as HTMLInputElement).value = String(servicio.duracionMinutos);
+            (overlay.querySelector('#servicio-descripcion') as HTMLTextAreaElement).value = servicio.descripcion || '';
+        }
+
+        overlay.querySelector('#servicio-form')?.addEventListener('submit', event => {
+            event.preventDefault();
+            void this.guardarServicio(overlay, servicio?.id, close);
+        });
+    }
+
+    private async guardarServicio(overlay: HTMLElement, id: number | undefined, close: () => void): Promise<void> {
+        const data: ServicioRequest = {
+            nombre: (overlay.querySelector('#servicio-nombre') as HTMLInputElement).value.trim(),
+            precio: Number((overlay.querySelector('#servicio-precio') as HTMLInputElement).value),
+            duracionMinutos: Number((overlay.querySelector('#servicio-duracion') as HTMLInputElement).value),
+            descripcion: (overlay.querySelector('#servicio-descripcion') as HTMLTextAreaElement).value.trim(),
+        };
+
+        const errorElement = overlay.querySelector('#servicio-form-error') as HTMLDivElement;
+        if (!data.nombre || data.precio < 0 || data.duracionMinutos < 1) {
+            errorElement.textContent = 'Completa correctamente los campos del servicio.';
+            errorElement.classList.remove('hidden');
+            return;
+        }
 
         try {
             if (id) await ServicioService.update(id, data);
             else await ServicioService.create(data);
-            this.limpiarFormulario();
+            close();
             await this.loadServicios();
         } catch (error) {
-            alert(error instanceof Error ? error.message : 'Error al guardar el servicio');
+            errorElement.textContent = error instanceof Error ? error.message : 'Error al guardar el servicio';
+            errorElement.classList.remove('hidden');
         }
     }
 }

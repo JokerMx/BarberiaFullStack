@@ -14,6 +14,7 @@ export class ReservaModal {
         this.onSuccess = onSuccess;
         this.overlay = document.createElement('div');
         this.modal = document.createElement('div');
+        document.body.classList.add('modal-open');
         this.render();
         this.bindEvents();
     }
@@ -29,7 +30,7 @@ export class ReservaModal {
 
         const fechaMin = ReservaService.getFechaMinima();
         const fechaMax = ReservaService.getFechaMaxima();
-        const horas = ReservaService.getHorasDisponibles();
+        const horas = ReservaService.getHorasDisponibles(fechaMin);
 
         const nombreServicio = this.servicio?.nombre || '';
         const precioServicio = this.servicio?.precio ? `$${this.servicio.precio.toLocaleString()}` : '';
@@ -125,6 +126,7 @@ export class ReservaModal {
         if (fechaInput && fechaError) {
             fechaInput.addEventListener('change', () => {
                 const validacion = ReservaService.validarFecha(fechaInput.value);
+                this.actualizarHorasDisponibles(fechaInput.value);
                 if (!validacion.valida) {
                     fechaError.textContent = validacion.mensaje || '';
                     fechaError.classList.remove('hidden');
@@ -140,6 +142,16 @@ export class ReservaModal {
         if (confirmBtn) {
             confirmBtn.addEventListener('click', () => this.confirmarReserva());
         }
+    }
+
+    private actualizarHorasDisponibles(fecha: string): void {
+        const horaSelect = document.getElementById('hora-reserva') as HTMLSelectElement;
+        if (!horaSelect) return;
+
+        const horas = ReservaService.getHorasDisponibles(fecha);
+        horaSelect.innerHTML = horas.length
+            ? horas.map(hora => `<option value="${hora}">${hora}</option>`).join('')
+            : '<option value="">No quedan horas disponibles hoy</option>';
     }
 
     private async confirmarReserva(): Promise<void> {
@@ -196,6 +208,13 @@ export class ReservaModal {
             return;
         }
 
+        const validacionHora = ReservaService.validarHora(fecha, hora);
+        if (!validacionHora.valida) {
+            errorElement.textContent = validacionHora.mensaje || '';
+            errorElement.classList.remove('hidden');
+            return;
+        }
+
         try {
             const reserva = await ReservaService.crearReserva({
                 clienteId,
@@ -225,5 +244,6 @@ export class ReservaModal {
         if (this.overlay.parentNode) {
             this.overlay.parentNode.removeChild(this.overlay);
         }
+        document.body.classList.remove('modal-open');
     }
 }

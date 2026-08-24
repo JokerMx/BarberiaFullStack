@@ -33,24 +33,56 @@ export class ReservaService {
     }
 
     // ===== OBTENER HORAS DISPONIBLES (simulación) =====
-    static getHorasDisponibles(): string[] {
+    static getHorasDisponibles(fecha?: string): string[] {
         const horas = [];
+        const hoy = this.getFechaLocal(new Date());
+        const fechaSeleccionada = fecha ? this.parseFechaLocal(fecha) : null;
+        const esHoy = fechaSeleccionada?.getTime() === hoy.getTime();
+        const ahora = new Date();
+
         for (let h = 9; h <= 20; h++) {
             for (let m = 0; m < 60; m += 30) {
                 const horaStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                horas.push(horaStr);
+                if (!esHoy || h > ahora.getHours() || (h === ahora.getHours() && m >= ahora.getMinutes())) {
+                    horas.push(horaStr);
+                }
             }
         }
         return horas;
     }
 
+    // ===== VALIDAR HORA =====
+    static validarHora(fecha: string, hora: string): { valida: boolean; mensaje?: string } {
+        const validacionFecha = this.validarFecha(fecha);
+        if (!validacionFecha.valida) return validacionFecha;
+
+        const hoy = this.getFechaLocal(new Date());
+        const fechaSeleccionada = this.parseFechaLocal(fecha);
+        const partesHora = hora.split(':').map(Number);
+        if (!fechaSeleccionada || partesHora.length !== 2 || partesHora.some(Number.isNaN)) {
+            return { valida: false, mensaje: 'La hora seleccionada no es válida' };
+        }
+
+        if (fechaSeleccionada.getTime() === hoy.getTime()) {
+            const ahora = new Date();
+            const horaSeleccionada = new Date();
+            horaSeleccionada.setHours(partesHora[0], partesHora[1], 0, 0);
+            if (horaSeleccionada < ahora) {
+                return { valida: false, mensaje: 'No se puede reservar una hora que ya pasó' };
+            }
+        }
+
+        return { valida: true };
+    }
+
     // ===== VALIDAR FECHA =====
     static validarFecha(fecha: string): { valida: boolean; mensaje?: string } {
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
+        const hoy = this.getFechaLocal(new Date());
+        const fechaSeleccionada = this.parseFechaLocal(fecha);
 
-        const fechaSeleccionada = new Date(fecha);
-        fechaSeleccionada.setHours(0, 0, 0, 0);
+        if (!fechaSeleccionada) {
+            return { valida: false, mensaje: 'La fecha seleccionada no es válida' };
+        }
 
         // 1. No puede ser anterior a hoy
         if (fechaSeleccionada < hoy) {
@@ -69,8 +101,7 @@ export class ReservaService {
 
     // ===== OBTENER FECHA MÍNIMA (hoy) =====
     static getFechaMinima(): string {
-        const hoy = new Date();
-        return hoy.toISOString().split('T')[0];
+        return this.formatFechaLocal(new Date());
     }
 
     // ===== OBTENER FECHA MÁXIMA (hoy + 30 días) =====
@@ -78,6 +109,31 @@ export class ReservaService {
         const hoy = new Date();
         const limite = new Date(hoy);
         limite.setDate(limite.getDate() + 30);
-        return limite.toISOString().split('T')[0];
+        return this.formatFechaLocal(limite);
+    }
+
+    private static parseFechaLocal(fecha: string): Date | null {
+        const partes = fecha.split('-').map(Number);
+        if (partes.length !== 3 || partes.some(Number.isNaN)) return null;
+
+        const [anio, mes, dia] = partes;
+        const resultado = new Date(anio, mes - 1, dia);
+        resultado.setHours(0, 0, 0, 0);
+        return resultado.getFullYear() === anio
+            && resultado.getMonth() === mes - 1
+            && resultado.getDate() === dia
+            ? resultado
+            : null;
+    }
+
+    private static getFechaLocal(fecha: Date): Date {
+        return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+    }
+
+    private static formatFechaLocal(fecha: Date): string {
+        const anio = fecha.getFullYear();
+        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+        const dia = String(fecha.getDate()).padStart(2, '0');
+        return `${anio}-${mes}-${dia}`;
     }
 }

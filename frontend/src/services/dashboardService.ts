@@ -35,7 +35,8 @@ export class DashboardService {
             }
 
             // Calcular reservas de hoy
-            const hoy = new Date().toISOString().split('T')[0];
+            const fechaActual = new Date();
+            const hoy = `${fechaActual.getFullYear()}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-${String(fechaActual.getDate()).padStart(2, '0')}`;
             const reservasHoy = reservas.filter(r => r.fecha === hoy);
 
             return {
@@ -162,9 +163,13 @@ export class DashboardService {
     static async actualizarEstadoReserva(id: number, estado: string): Promise<any> {
         const response = await fetch(`${API_BASE_URL}/reservas/${id}/estado?estado=${estado}`, {
             method: 'PUT',
+            credentials: 'include',
         });
 
         if (!response.ok) {
+            if (response.status === 403) {
+                throw new Error('Solo un administrador puede actualizar el estado de una reserva');
+            }
             throw new Error('Error al actualizar el estado de la reserva');
         }
 

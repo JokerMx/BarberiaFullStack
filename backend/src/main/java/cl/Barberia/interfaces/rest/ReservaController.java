@@ -48,7 +48,14 @@ public class ReservaController {
 
     @PostMapping
     @Operation(summary = "Crear una nueva reserva")
-    public ResponseEntity<ReservaEntity> crearReserva(@RequestBody ReservaEntity reserva) {
+    public ResponseEntity<?> crearReserva(@RequestBody ReservaEntity reserva) {
+        if (reserva.getFecha() != null
+                && reserva.getHora() != null
+                && reserva.getFecha().equals(LocalDate.now())
+                && reserva.getHora().isBefore(LocalTime.now())) {
+            return ResponseEntity.badRequest().body("No se puede reservar una hora que ya pasó");
+        }
+
         // Generar código único
         reserva.setCodigo("RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         reserva.setEstado("PENDIENTE");

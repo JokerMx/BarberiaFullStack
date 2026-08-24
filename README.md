@@ -185,6 +185,31 @@ docker compose up --build
 
 Esto inicia PostgreSQL, backend y frontend. La aplicación web queda en `http://localhost:5173`.
 
+### Script multiplataforma
+
+También puedes ejecutar todo el ciclo de parada, compilación y arranque desde la raíz:
+
+**Windows (PowerShell o CMD):**
+
+```powershell
+.\start-project.bat
+```
+
+o:
+
+```powershell
+.\start-project.ps1
+```
+
+**Linux y macOS:**
+
+```bash
+chmod +x start-project.sh
+./start-project.sh
+```
+
+El script detecta automáticamente el sistema, Maven o `mvnw`, y la variante disponible de Docker Compose (`docker compose` o `docker-compose`).
+
 ### Compilar y ejecutar JAR
 
 ```bash

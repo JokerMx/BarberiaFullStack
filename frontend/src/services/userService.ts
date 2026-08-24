@@ -55,7 +55,9 @@ export class UserService {
 
     // ===== BUSCAR POR USERNAME =====
     static async buscarPorUsername(username: string): Promise<User> {
-        const response = await fetch(`${API_BASE_URL}/usuarios/username/${encodeURIComponent(username)}`);
+        const response = await fetch(`${API_BASE_URL}/usuarios/username/${encodeURIComponent(username)}`, {
+            credentials: 'include',
+        });
         if (!response.ok) {
             throw new Error('Usuario no encontrado');
         }
@@ -64,7 +66,9 @@ export class UserService {
 
     // ===== BUSCAR POR EMAIL =====
     static async buscarPorEmail(email: string): Promise<User> {
-        const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`);
+        const response = await fetch(`${API_BASE_URL}/usuarios/email/${encodeURIComponent(email)}`, {
+            credentials: 'include',
+        });
         if (!response.ok) {
             throw new Error('Usuario no encontrado');
         }
