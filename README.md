@@ -180,10 +180,14 @@ El frontend queda disponible en `http://localhost:5173` y la API en `http://loca
 Desde la raiz del proyecto:
 
 ```bash
+copy .env.example .env
+# Edita .env y usa una contraseña local segura
 docker compose up --build
 ```
 
 Esto inicia PostgreSQL, backend y frontend. La aplicación web queda en `http://localhost:5173`.
+Los secretos se inyectan mediante variables de entorno y no se guardan en Git. El perfil `prod`
+desactiva Swagger y las imágenes se ejecutan sin root.
 
 ### Script multiplataforma
 

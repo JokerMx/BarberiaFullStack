@@ -4,8 +4,8 @@ services:
     image: postgres:16-alpine
     container_name: barberia-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       POSTGRES_DB: barberia_db
     ports:
       - "5432:5432"
@@ -28,8 +28,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:postgresql://postgres:5432/barberia_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
+      DB_USERNAME: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS must be set}
     ports:
       - "8080:8080"
     depends_on:
@@ -52,7 +53,7 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: barberia-frontend
     ports:
-      - "5173:5173"
+      - "5173:8080"
     depends_on:
       backend:
         condition: service_healthy

@@ -2,12 +2,18 @@ FROM eclipse-temurin:21-jdk-alpine
 
 WORKDIR /app
 
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 # Copiar el JAR
 COPY target/barberia-api-1.0.0.jar app.jar
+
+RUN chown appuser:appgroup app.jar
 
 # Copiar el archivo de propiedades (opcional)
 # COPY src/main/resources/application-prod.properties /config/
 
 EXPOSE 8080
+
+USER appuser
 
 ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]

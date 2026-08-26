@@ -1,7 +1,7 @@
 package cl.Barberia.interfaces.rest;
 
 import cl.Barberia.infrastructure.persistence.entity.ServicioEntity;
-import cl.Barberia.infrastructure.persistence.repository.ServicioRepositoryJpa;
+import cl.Barberia.application.servicecatalog.ServicioApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -16,18 +16,18 @@ import java.util.List;
 @Tag(name = "Servicios", description = "Catálogo de servicios de la barbería")
 public class ServicioController {
 
-    private final ServicioRepositoryJpa servicioRepository;
+    private final ServicioApplicationService servicioService;
 
     @GetMapping
     @Operation(summary = "Listar todos los servicios activos")
     public ResponseEntity<List<ServicioEntity>> listarServicios() {
-        return ResponseEntity.ok(servicioRepository.findByActivoTrue());
+        return ResponseEntity.ok(servicioService.listarActivos());
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un servicio por ID")
     public ResponseEntity<ServicioEntity> obtenerServicio(@PathVariable Long id) {
-        return servicioRepository.findById(id)
+        return servicioService.obtener(id)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
     }
@@ -35,29 +35,23 @@ public class ServicioController {
     @PostMapping
     @Operation(summary = "Crear un nuevo servicio (solo ADMIN)")
     public ResponseEntity<ServicioEntity> crearServicio(@RequestBody ServicioEntity servicio) {
-        return ResponseEntity.ok(servicioRepository.save(servicio));
+        return ResponseEntity.ok(servicioService.crear(servicio));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un servicio existente (solo ADMIN)")
     public ResponseEntity<ServicioEntity> actualizarServicio(@PathVariable Long id, 
                                                              @RequestBody ServicioEntity servicio) {
-        if (!servicioRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        servicio.setId(id);
-        return ResponseEntity.ok(servicioRepository.save(servicio));
+        return servicioService.actualizar(id, servicio)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Desactivar un servicio (solo ADMIN)")
     public ResponseEntity<Void> desactivarServicio(@PathVariable Long id) {
-        return servicioRepository.findById(id)
-            .map(servicio -> {
-                servicio.setActivo(false);
-                servicioRepository.save(servicio);
-                return ResponseEntity.ok().<Void>build();
-            })
+        return servicioService.desactivar(id)
+            .map(servicio -> ResponseEntity.ok().<Void>build())
             .orElse(ResponseEntity.notFound().build());
     }
 }

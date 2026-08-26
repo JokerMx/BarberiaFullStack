@@ -76,8 +76,7 @@ export class DashboardService {
             }));
         } catch (error) {
             console.warn('No se pudieron cargar reservas reales:', error);
-            // Retornar datos de ejemplo si no hay endpoint
-            return this.getReservasEjemplo();
+            return [];
         }
     }
 
@@ -113,15 +112,6 @@ export class DashboardService {
         if (!response.ok) throw new Error('Error al cancelar la reserva');
     }
 
-    // ===== DATOS DE EJEMPLO (FALLBACK) =====
-    private static getReservasEjemplo(): ReservaReciente[] {
-        return [
-            { id: 1, codigo: 'RES-001', cliente: 'Juan Pérez', servicio: 'Corte de Cabello', fecha: '2026-08-22', hora: '10:00', estado: 'CONFIRMADA' },
-            { id: 2, codigo: 'RES-002', cliente: 'María Gómez', servicio: 'Barba', fecha: '2026-08-22', hora: '11:30', estado: 'PENDIENTE' },
-            { id: 3, codigo: 'RES-003', cliente: 'Carlos Ruiz', servicio: 'Corte + Barba', fecha: '2026-08-21', hora: '15:00', estado: 'COMPLETADA' },
-        ];
-    }
-
     // ===== OBTENER SERVICIOS ACTIVOS =====
     static async getServiciosActivos(): Promise<any[]> {
         try {
@@ -133,11 +123,7 @@ export class DashboardService {
             return data.filter((s: any) => s.activo !== false);
         } catch (error) {
             console.warn('No se pudieron cargar servicios reales:', error);
-            return [
-                { id: 1, nombre: 'Corte de Cabello', precio: 15000, duracionMinutos: 30, activo: true },
-                { id: 2, nombre: 'Barba', precio: 8000, duracionMinutos: 20, activo: true },
-                { id: 3, nombre: 'Corte + Barba', precio: 20000, duracionMinutos: 50, activo: true },
-            ];
+            return [];
         }
     }
 

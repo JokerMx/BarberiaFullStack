@@ -34,6 +34,7 @@ public class ServicioEntity {
     private Integer duracionMinutos;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean activo = true;
 
     @Column(name = "fecha_creacion", updatable = false)
