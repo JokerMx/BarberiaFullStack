@@ -40,7 +40,7 @@ export class UserService {
 
     // ===== LISTAR TODOS LOS USUARIOS =====
     static async listarUsuarios(): Promise<User[]> {
-        const response = await fetch(`${API_BASE_URL}/usuarios`);
+        const response = await fetch(`${API_BASE_URL}/usuarios`, { credentials: 'include' });
         if (!response.ok) {
             throw new Error('Error al cargar usuarios');
         }
@@ -48,7 +48,7 @@ export class UserService {
     }
 
     static async listarPorRol(rol: string): Promise<User[]> {
-        const response = await fetch(`${API_BASE_URL}/usuarios/rol/${encodeURIComponent(rol)}`);
+        const response = await fetch(`${API_BASE_URL}/usuarios/rol/${encodeURIComponent(rol)}`, { credentials: 'include' });
         if (!response.ok) throw new Error('Error al filtrar usuarios');
         return response.json();
     }
@@ -79,6 +79,7 @@ export class UserService {
     static async actualizarUsuario(id: number, data: Partial<User>): Promise<User> {
         const response = await fetch(`${API_BASE_URL}/usuarios/${id}`, {
             method: 'PUT',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
         });
@@ -95,6 +96,7 @@ export class UserService {
     static async eliminarUsuario(id: number): Promise<void> {
         const response = await fetch(`${API_BASE_URL}/usuarios/${id}`, {
             method: 'DELETE',
+            credentials: 'include',
         });
 
         if (!response.ok) {

@@ -37,6 +37,12 @@ services:
         condition: service_healthy
     networks:
       - barberia-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/api/auth/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
     restart: unless-stopped
 
   # ===== FRONTEND (Vite + Nginx) =====
@@ -48,7 +54,8 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - barberia-network
     restart: unless-stopped

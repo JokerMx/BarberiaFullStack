@@ -12,7 +12,7 @@ export class DashboardView {
 
     constructor(container: HTMLElement) {
         this.container = container;
-        this.loadUser();
+        if (!this.loadUser()) return;
         this.render();
         this.bindEvents();
         this.loadData();
@@ -22,7 +22,7 @@ export class DashboardView {
         }, 30000);
     }
 
-    private loadUser(): void {
+    private loadUser(): boolean {
         const userData = localStorage.getItem('user');
         if (userData) {
             try {
@@ -34,7 +34,15 @@ export class DashboardView {
 
         if (!this.user) {
             window.location.href = '/login.html';
+            return false;
         }
+
+        if (this.user.rol === 'CLIENTE') {
+            window.location.href = '/servicios.html';
+            return false;
+        }
+
+        return true;
     }
 
     private render(): void {
@@ -50,12 +58,13 @@ export class DashboardView {
                     </div>
                     <div class="header-right">
                         <span class="user-name">👋 ${username}</span>
-                        <button id="btn-nueva-reserva-header" class="btn-primary">➕ Nueva Reserva</button>
+                        ${rol === 'ADMIN' || rol === 'BARBERO' ? '<button id="btn-nueva-reserva-header" class="btn-primary">➕ Nueva Reserva</button>' : ''}
                         <button id="logout-btn" class="btn-logout">Cerrar Sesión</button>
                     </div>
                 </header>
 
                 <section class="stats-grid">
+                    ${rol === 'ADMIN' ? `
                     <div class="stat-card">
                         <div class="stat-icon">👥</div>
                         <div class="stat-info">
@@ -70,6 +79,7 @@ export class DashboardView {
                             <p>Reservas Totales</p>
                         </div>
                     </div>
+                    ` : ''}
                     <div class="stat-card">
                         <div class="stat-icon">📆</div>
                         <div class="stat-info">
@@ -106,23 +116,30 @@ export class DashboardView {
                     </div>
                 </section>
 
-                <section class="acciones-section">
-                    <h2>⚡ Acciones Rápidas</h2>
-                    <div class="acciones-grid">
-                        <div class="accion-card" id="btn-nueva-reserva" style="cursor: pointer;">
-                            <span class="accion-icon">➕</span>
-                            <span>Nueva Reserva</span>
-                        </div>
-                        <a href="/servicios.html" class="accion-card">
-                            <span class="accion-icon">✂️</span>
-                            <span>Ver Servicios</span>
-                        </a>
-                        <a href="/usuarios.html" class="accion-card">
-                            <span class="accion-icon">👥</span>
-                            <span>Gestionar Usuarios</span>
-                        </a>
+                ${rol === 'ADMIN' || rol === 'BARBERO' ? `
+                <aside class="acciones-sidebar" aria-label="Acciones rápidas">
+                    <div class="acciones-sidebar-header">
+                        <span class="acciones-sidebar-title">Acciones</span>
+                        <button id="acciones-toggle" class="acciones-toggle" type="button" aria-label="Contraer menú" aria-expanded="true" aria-controls="acciones-sidebar-content">☰</button>
                     </div>
-                </section>
+                    <div id="acciones-sidebar-content" class="acciones-sidebar-content">
+                    <button class="accion-card" id="btn-nueva-reserva" title="Nueva reserva" aria-label="Nueva reserva">
+                        <span class="accion-icon">📅</span>
+                        <span>Nueva reserva</span>
+                    </button>
+                    <a href="/servicios.html" class="accion-card" title="Ver servicios" aria-label="Ver servicios">
+                        <span class="accion-icon">✂️</span>
+                        <span>Ver servicios</span>
+                    </a>
+                    ${rol === 'ADMIN' ? `
+                        <a href="/usuarios.html" class="accion-card" title="Gestionar usuarios" aria-label="Gestionar usuarios">
+                            <span class="accion-icon">👥</span>
+                            <span>Gestionar usuarios</span>
+                        </a>
+                    ` : ''}
+                    </div>
+                </aside>
+                ` : ''}
             </div>
         `;
     }
@@ -143,19 +160,31 @@ export class DashboardView {
         document.getElementById('filtro-fecha-reserva')?.addEventListener('change', () => this.loadReservas());
         document.getElementById('filtro-estado-reserva')?.addEventListener('change', () => this.loadReservas());
 
-        // ===== NUEVA RESERVA (desde el header) =====
-        document.getElementById('btn-nueva-reserva-header')?.addEventListener('click', () => {
-            new ReservaModal(undefined, () => {
-                this.loadData(false);
+        const accionesSidebar = document.querySelector('.acciones-sidebar');
+        const accionesToggle = document.getElementById('acciones-toggle') as HTMLButtonElement | null;
+        if (accionesSidebar && accionesToggle) {
+            accionesToggle.addEventListener('click', () => {
+                const contraido = accionesSidebar.classList.toggle('collapsed');
+                accionesToggle.setAttribute('aria-expanded', String(!contraido));
+                accionesToggle.setAttribute('aria-label', contraido ? 'Expandir menú' : 'Contraer menú');
             });
-        });
+        }
 
-        // ===== NUEVA RESERVA (desde acciones) =====
-        document.getElementById('btn-nueva-reserva')?.addEventListener('click', () => {
-            new ReservaModal(undefined, () => {
-                this.loadData(false);
+        if (this.user?.rol === 'ADMIN' || this.user?.rol === 'BARBERO') {
+            // ===== NUEVA RESERVA (desde el header) =====
+            document.getElementById('btn-nueva-reserva-header')?.addEventListener('click', () => {
+                new ReservaModal(undefined, () => {
+                    this.loadData(false);
+                });
             });
-        });
+
+            // ===== NUEVA RESERVA (desde acciones) =====
+            document.getElementById('btn-nueva-reserva')?.addEventListener('click', () => {
+                new ReservaModal(undefined, () => {
+                    this.loadData(false);
+                });
+            });
+        }
     }
 
     private async loadData(showLoading: boolean = true): Promise<void> {
@@ -229,7 +258,7 @@ export class DashboardView {
                             <th>Fecha</th>
                             <th>Hora</th>
                             <th>Estado</th>
-                            ${this.user?.rol === 'ADMIN' || this.user?.rol === 'CLIENTE' ? '<th>Acciones</th>' : ''}
+                            ${this.user?.rol === 'ADMIN' || this.user?.rol === 'BARBERO' ? '<th>Acciones</th>' : ''}
                         </tr>
                     </thead>
                     <tbody>
@@ -241,7 +270,7 @@ export class DashboardView {
                                 <td>${reserva.fecha}</td>
                                 <td>${reserva.hora}</td>
                                 <td><span class="estado-badge ${reserva.estado.toLowerCase()}">${reserva.estado}</span></td>
-                                ${this.user?.rol === 'ADMIN' ? `
+                                ${this.user?.rol === 'ADMIN' || this.user?.rol === 'BARBERO' ? `
                                     <td>
                                         <select class="estado-select" data-id="${reserva.id}">
                                             <option value="PENDIENTE" ${reserva.estado === 'PENDIENTE' ? 'selected' : ''}>PENDIENTE</option>
@@ -250,9 +279,7 @@ export class DashboardView {
                                             <option value="CANCELADA" ${reserva.estado === 'CANCELADA' ? 'selected' : ''}>CANCELADA</option>
                                         </select>
                                     </td>
-                                ` : this.user?.rol === 'CLIENTE' && reserva.estado !== 'CANCELADA' ? `
-                                    <td><button class="btn-cancelar-reserva" data-id="${reserva.id}">Cancelar</button></td>
-                                ` : this.user?.rol === 'CLIENTE' ? '<td></td>' : ''}
+                                ` : ''}
                             </tr>
                         `).join('')}
                     </tbody>
@@ -260,7 +287,7 @@ export class DashboardView {
             </div>
         `;
 
-        if (this.user?.rol === 'ADMIN') {
+        if (this.user?.rol === 'ADMIN' || this.user?.rol === 'BARBERO') {
             document.querySelectorAll('.estado-select').forEach((select) => {
                 select.addEventListener('change', async (e) => {
                     const target = e.target as HTMLSelectElement;

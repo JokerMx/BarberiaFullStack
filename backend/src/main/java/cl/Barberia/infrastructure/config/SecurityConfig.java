@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/servicios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/servicios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/servicios/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/reservas/*/estado").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/reservas/*/estado").hasAnyRole("ADMIN", "BARBERO")
                 .requestMatchers("/api/reservas/**").authenticated()
                 .anyRequest().permitAll())
             .addFilterBefore(sessionAuthenticationFilter, AnonymousAuthenticationFilter.class);

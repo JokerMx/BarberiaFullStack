@@ -18,6 +18,7 @@ export class ReservaService {
     static async crearReserva(data: ReservaRequest): Promise<ReservaResponse> {
         const response = await fetch(`${API_BASE_URL}/reservas`, {
             method: 'POST',
+            credentials: 'include',
             headers: {
                 'Content-Type': 'application/json',
             },
