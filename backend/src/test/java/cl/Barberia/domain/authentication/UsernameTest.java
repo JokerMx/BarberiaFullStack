@@ -15,4 +15,10 @@ class UsernameTest {
     void rechazaCaracteresNoPermitidos() {
         assertThrows(IllegalArgumentException.class, () -> new Username("cliente!"));
     }
+
+    @Test
+    void rejectsBlankAndTooShortUsername() {
+        assertThrows(IllegalArgumentException.class, () -> new Username(" "));
+        assertThrows(IllegalArgumentException.class, () -> new Username("ab"));
+    }
 }

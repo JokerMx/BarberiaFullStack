@@ -224,8 +224,16 @@ java -jar target/barberia-api-1.0.0.jar
 ### Ejecutar tests
 
 ```bash
-./mvnw test
+cd backend
+./mvnw verify
 ```
+
+En Windows, ejecutar `mvnw.cmd verify`. El informe de cobertura JaCoCo se genera en
+`backend/target/site/jacoco/index.html`.
+
+Con Docker disponible, la suite ejecuta `UserRegistrationPostgresIntegrationTest`, que registra un
+usuario por HTTP y comprueba su persistencia en un contenedor PostgreSQL efimero. Sin Docker, esa
+prueba se omite automaticamente y las pruebas unitarias siguen ejecutandose.
 
 ### Validar frontend
 

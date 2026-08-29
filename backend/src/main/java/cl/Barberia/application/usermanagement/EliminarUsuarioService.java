@@ -18,9 +18,4 @@ public class EliminarUsuarioService {
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
         usuarioRepository.deleteById(id);
     }
-
-    public void ejecutar(Long id) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'ejecutar'");
-    }
 }

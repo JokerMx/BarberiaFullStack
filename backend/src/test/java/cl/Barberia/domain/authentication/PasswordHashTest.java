@@ -20,4 +20,10 @@ class PasswordHashTest {
         assertThrows(IllegalArgumentException.class,
             () -> PasswordHash.fromPlainPassword("12345"));
     }
+
+    @Test
+    void rejectsNullPasswordAndBlankHash() {
+        assertThrows(IllegalArgumentException.class, () -> PasswordHash.fromPlainPassword(null));
+        assertThrows(IllegalArgumentException.class, () -> PasswordHash.fromHash(" "));
+    }
 }

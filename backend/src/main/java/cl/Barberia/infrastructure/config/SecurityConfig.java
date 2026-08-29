@@ -26,6 +26,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/api/usuarios/registro").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/servicios/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/username/**", "/api/usuarios/email/**").authenticated()
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/servicios/**").hasRole("ADMIN")
@@ -33,7 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.DELETE, "/api/servicios/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/reservas/*/estado").hasAnyRole("ADMIN", "BARBERO")
                 .requestMatchers("/api/reservas/**").authenticated()
-                .anyRequest().permitAll())
+                .anyRequest().denyAll())
             .addFilterBefore(sessionAuthenticationFilter, AnonymousAuthenticationFilter.class);
         return http.build();
     }
