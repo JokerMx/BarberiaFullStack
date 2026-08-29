@@ -235,6 +235,20 @@ Con Docker disponible, la suite ejecuta `UserRegistrationPostgresIntegrationTest
 usuario por HTTP y comprueba su persistencia en un contenedor PostgreSQL efimero. Sin Docker, esa
 prueba se omite automaticamente y las pruebas unitarias siguen ejecutandose.
 
+### Evidencia de calidad
+
+Resultado de la ultima ejecucion validada con `backend/mvnw.cmd verify`:
+
+| Indicador | Resultado |
+|-----------|-----------|
+| Pruebas JUnit 5 | 79 |
+| Fallos y errores | 0 |
+| Pruebas omitidas | 1 (integracion PostgreSQL sin Docker disponible) |
+| Cobertura JaCoCo global | 99,82% |
+
+La medicion excluye exclusivamente `BarberiaApplication`, el punto de arranque sin reglas de negocio.
+El informe HTML permite revisar el detalle por clase y paquete.
+
 ### Validar frontend
 
 Desde `frontend/`:

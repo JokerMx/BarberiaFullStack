@@ -159,6 +159,20 @@ En Windows, ejecutar `mvnw.cmd verify`. El informe de cobertura JaCoCo se genera
 PostgreSQL que registra un usuario mediante HTTP y verifica el dato persistido; sin Docker, esa
 prueba se omite automaticamente.
 
+### Evidencia de calidad
+
+Resultado de la ultima ejecucion validada con `mvnw.cmd verify`:
+
+| Indicador | Resultado |
+|-----------|-----------|
+| Pruebas JUnit 5 | 79 |
+| Fallos y errores | 0 |
+| Pruebas omitidas | 1 (integracion PostgreSQL sin Docker disponible) |
+| Cobertura JaCoCo global | 99,82% |
+
+La medicion excluye exclusivamente `BarberiaApplication`, el punto de arranque sin reglas de negocio.
+El informe HTML permite revisar el detalle por clase y paquete.
+
 ---
 
 ## 🔌 Endpoints
